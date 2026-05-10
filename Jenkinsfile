@@ -29,14 +29,14 @@ pipeline {
                           --controller=13.48.29.172:9990 \
                           --user=$WF_USER \
                           --password=$WF_PASS \
-                          --command="undeploy myapp.war --keep-content" || true
+                          --command="undeploy cyberpunk-webapp.war --keep-content" || true
 
                         /opt/wildfly-cli/bin/jboss-cli.sh \
                           --connect \
                           --controller=13.48.29.172:9990 \
                           --user=$WF_USER \
                           --password=$WF_PASS \
-                          --command="deploy target/myapp.war --force"
+                          --command="deploy target/cyberpunk-webapp.war --force"
                     '''
                 }
             }
