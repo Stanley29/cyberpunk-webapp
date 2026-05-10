@@ -1,42 +1,42 @@
 pipeline {
-    agent any
+    agent none
 
     stages {
 
         stage('Build') {
+            agent { label 'slave1' }
             steps {
-                echo 'Building the application...'
                 sh 'mvn clean package -DskipTests'
+                stash includes: 'target/*.war', name: 'warfile'
             }
         }
 
-        stage('Test') {
-            steps {
-                echo 'Pipeline is working!'
-            }
-        }
-
-        stage('Deploy') {
+        stage('Prepare Artifact on Master') {
             agent { label 'built-in' }
             steps {
-                echo 'Deploying application to WildFly...'
+                unstash 'warfile'
+                sh 'ls -l target'
+            }
+        }
+
+        stage('Deploy to WildFly') {
+            agent { label 'built-in' }
+            steps {
                 withCredentials([usernamePassword(credentialsId: 'wildfly-creds', usernameVariable: 'WF_USER', passwordVariable: 'WF_PASS')]) {
                     sh '''
-                    WAR_FILE=target/cyberpunk-webapp.war
+                        /opt/wildfly-cli/bin/jboss-cli.sh \
+                          --connect \
+                          --controller=13.48.29.172:9990 \
+                          --user=$WF_USER \
+                          --password=$WF_PASS \
+                          --command="undeploy myapp.war --keep-content" || true
 
-                    /opt/wildfly-cli/bin/jboss-cli.sh \
-                      --connect \
-                      --controller=13.48.29.172:9990 \
-                      --user=$WF_USER \
-                      --password=$WF_PASS \
-                      --command="undeploy cyberpunk-webapp.war --keep-content"
-
-                    /opt/wildfly-cli/bin/jboss-cli.sh \
-                      --connect \
-                      --controller=13.48.29.172:9990 \
-                      --user=$WF_USER \
-                      --password=$WF_PASS \
-                      --command="deploy $WAR_FILE --force"
+                        /opt/wildfly-cli/bin/jboss-cli.sh \
+                          --connect \
+                          --controller=13.48.29.172:9990 \
+                          --user=$WF_USER \
+                          --password=$WF_PASS \
+                          --command="deploy target/myapp.war --force"
                     '''
                 }
             }
