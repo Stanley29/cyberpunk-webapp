@@ -17,6 +17,7 @@ pipeline {
         }
 
         stage('Deploy') {
+            agent { label 'master' }
             steps {
                 echo 'Testing WildFly connection...'
                 withCredentials([usernamePassword(credentialsId: 'wildfly-creds', usernameVariable: 'WF_USER', passwordVariable: 'WF_PASS')]) {
@@ -33,4 +34,3 @@ pipeline {
         }
     }
 }
-
